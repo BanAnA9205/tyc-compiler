@@ -52,9 +52,6 @@ class ASTGeneration(TyCVisitor):
         
         elif ctx.func_call():               # func_call
             return self.visit(ctx.func_call())
-        
-        elif ctx.assign_expr():             # assign_expr
-            return self.visit(ctx.assign_expr())
 
         # from here on, it's either 3 or 2 children, 
         # at least 1 expr and 0 BS
@@ -76,6 +73,13 @@ class ASTGeneration(TyCVisitor):
                 return PrefixOp(op, operand)
             
         elif child_cnt == 3:
+            if ctx.ASSIGN():
+                # <assoc=right> expr ASSIGN expr
+                lhs = self.visit(ctx.expr(0))
+                rhs = self.visit(ctx.expr(1))
+
+                return AssignExpr(lhs, rhs)
+
             # expr (MUL_OP | DIV_OP | MOD_OP) expr
             # | expr (ADD_OP | SUB_OP) expr
             # | expr (LESS_OP | LEQ_OP | GREAT_OP | GEQ_OP) expr
@@ -87,25 +91,6 @@ class ASTGeneration(TyCVisitor):
             right = self.visit(ctx.expr(1))
             
             return BinaryOp(left, op, right)
-
-    # Visit a parse tree produced by TyCParser#assign_expr.
-    def visitAssign_expr(self, ctx:TyCParser.Assign_exprContext):
-        # assign_expr: <assoc=right> ID (MEM_ACC ID)* ASSIGN expr ;
-
-        if not ctx.MEM_ACC():
-            # ID ASSIGN expr
-            left = Identifier(ctx.ID(0).getText())
-            right = self.visit(ctx.expr())
-            return AssignExpr(left, right)
-        else:
-            # ID (MEM_ACC ID)+ ASSIGN expr
-            id_list = [x.getText() for x in ctx.ID()]
-            right = self.visit(ctx.expr())
-            left = Identifier(id_list[0])
-            for i in range(1, len(id_list)):
-                left = MemberAccess(left, id_list[i])
-
-        return AssignExpr(left, right)
 
     # Visit a parse tree produced by TyCParser#expr_list.
     def visitExpr_list(self, ctx:TyCParser.Expr_listContext):
@@ -254,28 +239,15 @@ class ASTGeneration(TyCVisitor):
 
     # Visit a parse tree produced by TyCParser#for_init.
     def visitFor_init(self, ctx:TyCParser.For_initContext):
-        # for_init: decl_stmt | (assign_expr SEMICOLON) ;
+        # for_init: decl_stmt | expr SEMICOLON ;
         if ctx.decl_stmt():
             return self.visit(ctx.decl_stmt())
-        elif ctx.assign_expr():
-            return ExprStmt(self.visit(ctx.assign_expr()))
+        return ExprStmt(self.visit(ctx.expr()))
 
     # Visit a parse tree produced by TyCParser#for_updt.
     def visitFor_updt(self, ctx:TyCParser.For_updtContext):
-        # for_updt: assign_expr
-        #         | expr (INC_OP | DEC_OP)
-        #         | (INC_OP | DEC_OP) expr ;
-        if ctx.assign_expr():
-            return self.visit(ctx.assign_expr())
-        
-        elif ctx.INC_OP() or ctx.DEC_OP():
-            is_postfix = isinstance(ctx.getChild(0), TyCParser.ExprContext)
-            op = ctx.getChild(1).getText() if is_postfix else ctx.getChild(0).getText()
-            operand = self.visit(ctx.expr())
-            if is_postfix:
-                return PostfixOp(op, operand)
-            else:
-                return PrefixOp(op, operand)
+        # for_updt: expr ;
+        return self.visit(ctx.expr())
 
 
     # Visit a parse tree produced by TyCParser#for_stmt.

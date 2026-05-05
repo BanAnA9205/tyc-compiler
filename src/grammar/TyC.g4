@@ -122,6 +122,7 @@ ERROR_CHAR: .;
 ////////////////////////////// PARSER //////////////////////////////
 
 // Expression
+
 expr: LB expr_list? RB 
     | LP expr RP 
     | INT_LIT | FLOAT_LIT | STRING_LIT 
@@ -137,9 +138,7 @@ expr: LB expr_list? RB
     | expr (EQ_OP | NOTEQ_OP) expr
     | expr LO_AND expr
     | expr LO_OR expr
-    | assign_expr ;
-
-assign_expr: <assoc=right> ID (MEM_ACC ID)* ASSIGN expr ;
+    | <assoc=right> expr ASSIGN expr ;
 
 expr_list: expr (COMMA expr)* ;
 
@@ -177,10 +176,8 @@ if_stmt: IF LP expr RP stmt (ELSE stmt)? ;
 
 while_stmt: WHILE LP expr RP stmt ;
 
-for_init: decl_stmt | (assign_expr SEMICOLON) ;
-for_updt: assign_expr 
-        | expr (INC_OP | DEC_OP)
-        | <assoc=right> (INC_OP | DEC_OP) expr ;
+for_init: decl_stmt | expr SEMICOLON ;
+for_updt: expr ;
 
 for_stmt: FOR LP 
                 (for_init | SEMICOLON)

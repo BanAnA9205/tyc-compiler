@@ -607,7 +607,7 @@ def test_parser_111():
 
 def test_parser_112():
     source = "void main() { int x; x = (1 + 2; }"
-    expected = "Error on line 1 col 31: ;"
+    expected = "Error on line 1 col 23: ="
     assert Parser(source).parse() == expected
 
 
@@ -649,7 +649,7 @@ def test_parser_118():
 
 def test_parser_119():
     source = "void main() { int x; x = {1 2}; }"
-    expected = "Error on line 1 col 28: 2"
+    expected = "Error on line 1 col 23: ="
     assert Parser(source).parse() == expected
 
 
@@ -720,7 +720,7 @@ def test_parser_127():
 
 def test_parser_128():
     source = "struct A { int x; }; int main() { A a; a.x = (1 + 2; return a.x; }"
-    expected = "Error on line 1 col 51: ;"
+    expected = "Error on line 1 col 43: ="
     assert Parser(source).parse() == expected
 
 
@@ -734,7 +734,7 @@ def test_parser_130():
     source = (
         "struct A { int x; }; int f(int x) { return x; } int main() { A a; a.x = f(1,2; return a.x; }"
     )
-    expected = "Error on line 1 col 77: ;"
+    expected = "Error on line 1 col 70: ="
     assert Parser(source).parse() == expected
 
 
