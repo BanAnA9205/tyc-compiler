@@ -693,6 +693,38 @@ class Emitter:
         file.write(tmp)
         file.close()
 
+    def emit_field(self, name: str, in_type, is_public: bool = True) -> str:
+        """
+        Emit a field declaration.
+
+        Args:
+            name: Field name
+            in_type: Field type
+            is_public: True for public field
+
+        Returns:
+            Generated field declaration string
+        """
+        access = "public" if is_public else "private"
+        return f".field {access} '{name}' {self.get_jvm_type(in_type)}\n"
+
+    def emit_default_constructor(self) -> str:
+        """
+        Emit a default no-arg constructor.
+
+        Returns:
+            Generated constructor code
+        """
+        code = ""
+        code += self.jvm.emitMETHOD("<init>", "()V", False)
+        code += self.jvm.emitLIMITSTACK(1)
+        code += self.jvm.emitLIMITLOCAL(1)
+        code += self.jvm.emitALOAD(0)
+        code += self.jvm.emitINVOKESPECIAL()
+        code += self.jvm.emitRETURN()
+        code += self.jvm.emitENDMETHOD()
+        return code
+
     def print_out(self, in_: str) -> None:
         """
         Print out the code to screen (add to buffer).
