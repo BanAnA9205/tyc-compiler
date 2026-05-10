@@ -3509,3 +3509,22 @@ def test_142():
     expected = "20103.0120.0"
     result = CodeGenerator().generate_and_run(ast)
     assert result == expected, f"Expected '{expected}', got '{result}'"
+
+
+def test_143():
+    source = '''
+    void main() {
+        int x = 10;
+        while (x--) int x = 5;
+        printInt(x);
+
+        for (; x < 5; ++x) {
+            int x = 3;
+        }
+        printInt(x);
+    }
+    '''
+    expected = "-15"
+    ast = ASTGenerator(source).generate()
+    result = CodeGenerator().generate_and_run(ast)
+    assert result == expected

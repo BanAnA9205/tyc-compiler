@@ -226,11 +226,11 @@ class CodeGenerator(BaseVisitor):
         end_label = frame.get_new_label()
         self.emit.print_out(cond_code)
         self.emit.print_out(self.emit.emit_if_false(else_label, frame))
-        self.visit(node.then_stmt, o)
+        self.visit(node.then_stmt, SubBody(frame, list(o.sym)))
         self.emit.print_out(self.emit.emit_goto(end_label, frame))
         self.emit.print_out(self.emit.emit_label(else_label, frame))
         if node.else_stmt:
-            self.visit(node.else_stmt, o)
+            self.visit(node.else_stmt, SubBody(frame, list(o.sym)))
         self.emit.print_out(self.emit.emit_label(end_label, frame))
         return o
 
@@ -243,7 +243,7 @@ class CodeGenerator(BaseVisitor):
         cond_code, _ = self.visit(node.condition, Access(frame, o.sym))
         self.emit.print_out(cond_code)
         self.emit.print_out(self.emit.emit_if_false(end_label, frame))
-        self.visit(node.body, o)
+        self.visit(node.body, SubBody(frame, list(o.sym)))
         self.emit.print_out(self.emit.emit_goto(start_label, frame))
         self.emit.print_out(self.emit.emit_label(end_label, frame))
         frame.exit_loop()
@@ -433,9 +433,10 @@ class CodeGenerator(BaseVisitor):
     def visit_for_stmt(self, node: ForStmt, o: Any = None):
         frame = o.frame
 
+        # init, condition, and update use the outer scope `o` directly
         if node.init:
             if isinstance(node.init, (VarDecl, ExprStmt)):
-                self.visit(node.init, SubBody(frame, o.sym))
+                self.visit(node.init, o)
             else:
                 init_code, init_type = self.visit(node.init, Access(frame, o.sym))
                 self.emit.print_out(init_code)
@@ -453,7 +454,8 @@ class CodeGenerator(BaseVisitor):
             self.emit.print_out(cond_code)
             self.emit.print_out(self.emit.emit_if_false(break_label, frame))
 
-        self.visit(node.body, o)
+        # The body gets its own isolated scope
+        self.visit(node.body, SubBody(frame, list(o.sym)))
 
         self.emit.print_out(self.emit.emit_label(continue_label, frame))
         if node.update:
